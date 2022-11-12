@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>MyLib</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="XA2JJBEJ_LIF_IMAGE.bin" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="XA2JJBEJ_LIF_IMAGE.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>
