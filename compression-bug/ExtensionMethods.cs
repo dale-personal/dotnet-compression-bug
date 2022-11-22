@@ -228,54 +228,69 @@ namespace MyLib
                 if (s is null) Debug.Fail("not able to load resource.");
                 var compressed = s.LoadBoolean();
                 if (!compressed) Debug.Fail("resource is not compressed.");
-                using (var deflate = new DeflateStream(s, CompressionMode.Decompress))
+
+                var inputStream = new DeflateStream(s, CompressionMode.Decompress) as Stream;
+
+                var workAround = false;
+                if (workAround)
                 {
-                    var version = deflate.LoadInt16();
+                    // the work around here is to fully decompress the resource
+                    // as the bug seems to be related to a GZip operation on deflate stream.
+                    var ms = new MemoryStream();
+                    inputStream.CopyTo(ms);
+                    inputStream.Dispose();
+                    ms.Position = 0;
+                    inputStream = ms;
+                }
+
+                using (inputStream)
+                {
+                    var version = inputStream.LoadInt16();
                     if (version < 2) Debug.Fail("");
-                    var mostSigBytes = deflate.ReadByte();
+                    var mostSigBytes = inputStream.ReadByte();
                     Debug.Assert(2 == mostSigBytes);
-                    var leastSigBytes = deflate.ReadByte();
+                    var leastSigBytes = inputStream.ReadByte();
                     Debug.Assert(3 == leastSigBytes);
-                    var bounds = deflate.LoadRectangleF();
+                    var bounds = inputStream.LoadRectangleF();
                     if (version >= 5)
                     {
-                        var count = deflate.LoadInt32();
+                        var count = inputStream.LoadInt32();
                         for (int i = 0; i < count; i++)
                         {
-                            var k = deflate.LoadString();
-                            var v = deflate.LoadRectangleF();
+                            var k = inputStream.LoadString();
+                            var v = inputStream.LoadRectangleF();
                         }
                     }
                     if (version >= 3)
                     {
-                        var caption = deflate.LoadString();
+                        var caption = inputStream.LoadString();
                     }
                     if (version >= 5)
                     {
-                        var count = deflate.LoadInt32();
+                        var count = inputStream.LoadInt32();
                         for (int i = 0; i < count; i++)
                         {
-                            var k = deflate.LoadString();
-                            var v = deflate.LoadString();
+                            var k = inputStream.LoadString();
+                            var v = inputStream.LoadString();
                         }
                     }
                     if (version >= 4)
                     {
-                        var count = deflate.LoadInt32();
+                        var count = inputStream.LoadInt32();
                         for (int i = 0; i < count; i++)
                         {
-                            var e = deflate.LoadEnum<InstructionType>();
+                            var e = inputStream.LoadEnum<InstructionType>();
                             switch (e)
                             {
                                 case InstructionType.CadDetail:
-                                    deflate.LoadDetailInstruction();
+                                    inputStream.LoadDetailInstruction();
                                     break;
                                 case InstructionType.CadDimension:
-                                    deflate.LoadDimensionInstruction();
+                                    inputStream.LoadDimensionInstruction();
                                     break;
                                 case InstructionType.CadPath:
                                 case InstructionType.CadOperation:
-                                    deflate.LoadPathInstruction();
+                                    inputStream.LoadPathInstruction();
                                     break;
 
                             }
