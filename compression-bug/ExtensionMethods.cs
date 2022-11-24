@@ -17,7 +17,11 @@ namespace MyLib
             if (count < 1)
                 throw new ArgumentOutOfRangeException(nameof(count));
             byte[] result = new byte[count];
-            s.Read(result, 0, count);
+            int totalRead = 0, bytesRead;
+            while ((bytesRead = s.Read(result, totalRead, result.Length - totalRead)) > 0)
+            {
+                totalRead += bytesRead;
+            }
             return result;
         }
 
@@ -229,21 +233,7 @@ namespace MyLib
                 var compressed = s.LoadBoolean();
                 if (!compressed) Debug.Fail("resource is not compressed.");
 
-                var inputStream = new DeflateStream(s, CompressionMode.Decompress) as Stream;
-
-                var workAround = false;
-                if (workAround)
-                {
-                    // the work around here is to fully decompress the resource
-                    // as the bug seems to be related to a GZip operation on deflate stream.
-                    var ms = new MemoryStream();
-                    inputStream.CopyTo(ms);
-                    inputStream.Dispose();
-                    ms.Position = 0;
-                    inputStream = ms;
-                }
-
-                using (inputStream)
+                using (var inputStream = new DeflateStream(s, CompressionMode.Decompress))
                 {
                     var version = inputStream.LoadInt16();
                     if (version < 2) Debug.Fail("");
